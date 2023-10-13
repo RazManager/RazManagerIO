@@ -24,15 +24,16 @@ namespace RazManagerIO.Host.Services.Utilities
 
         private class BluezInterfaceMetadata
         {
-            public string BluezInterface { get; init; } = null!;
-            public string? DeviceName { get; init; }
+            public required string BluezInterface { get; init; }
+            public required bool Match { get; init; }
         }
 
         private ConcurrentDictionary<Tmds.DBus.ObjectPath, IEnumerable<BluezInterfaceMetadata>> _bluezObjectPathInterfaces = new();
         private bluez.DBus.IAdapter1? _bluezAdapterProxy = null;
         private Tmds.DBus.ObjectPath? _deviceObjectPath = null;
         private bluez.DBus.IDevice1? _deviceProxy = null;
-
+        private readonly string _deviceName;
+        private readonly Guid _deviceUuid;
 
         //private readonly ScalextricArcState _scalextricArcState;
         //private readonly Channel<CarIdState> _carIdStateChannel;
@@ -52,13 +53,17 @@ namespace RazManagerIO.Host.Services.Utilities
         private bool _discoveryStarted = false;
 
 
-        public BluezClientServiceBase(//ScalextricArcState scalextricArcState,
+        public BluezClientServiceBase(string deviceName,
+                                      Guid deviceUuid,
+                                      //ScalextricArcState scalextricArcState,
                                       //Channel<CarIdState> carIdStateChannel,
                                       //Channel<CommandState> commandStateChannel,
                                       //Channel<ConnectDto> connectionChannel,
                                       //Channel<ThrottleProfileState> throttleProfileStateChannel,
                                       ILogger<BluezClientServiceBase> logger)
         {
+            _deviceName = deviceName;
+            _deviceUuid = deviceUuid;
             //_scalextricArcState = scalextricArcState;
             //_carIdStateChannel = carIdStateChannel;
             //_commandStateChannel = commandStateChannel;
@@ -143,14 +148,14 @@ namespace RazManagerIO.Host.Services.Utilities
                         }
                     );
 
-                    _logger.LogInformation("BlueZ initialization done. Trying to find a Scalextric ARC powerbase...");
+                    _logger.LogInformation($"BlueZ initialization done. Trying to find the devive...");
                     //await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Enabled);
 
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        var scalextricArcObjectPathKps = _bluezObjectPathInterfaces.Where(x => x.Value.Any(i => i.BluezInterface == bluezDeviceInterface && !string.IsNullOrEmpty(i.DeviceName) && i.DeviceName == "Scalextric ARC"));
+                        var deviceObjectPathKps = _bluezObjectPathInterfaces.Where(x => x.Value.Any(i => i.Match));
 
-                        if (!scalextricArcObjectPathKps.Any())
+                        if (!deviceObjectPathKps.Any())
                         {
                             await ResetAsync(_deviceObjectPath);
 
@@ -160,14 +165,14 @@ namespace RazManagerIO.Host.Services.Utilities
                             }
                             else
                             {
-                                var discoveryProperties = new Dictionary<string, object>
-                                {
-                                    {
-                                        "UUIDs",
-                                        new string[] { "00003b08-0000-1000-8000-00805f9b34fb" }
-                                    }
-                                };
-                                await _bluezAdapterProxy.SetDiscoveryFilterAsync(discoveryProperties);
+                                // var discoveryProperties = new Dictionary<string, object>
+                                // {
+                                //     {
+                                //         "UUIDs",
+                                //         new string[] { "00003b08-0000-1000-8000-00805f9b34fb" }
+                                //     }
+                                // };
+                                // await _bluezAdapterProxy.SetDiscoveryFilterAsync(discoveryProperties);
                                 _logger.LogInformation("Starting Bluetooth device discovery.");
                                 await _bluezAdapterProxy.StartDiscoveryAsync();
                                 _discoveryStarted = true;
@@ -183,11 +188,11 @@ namespace RazManagerIO.Host.Services.Utilities
                                 await _bluezAdapterProxy.StopDiscoveryAsync();
                             }
 
-                            if (scalextricArcObjectPathKps.Count() >= 2)
+                            if (deviceObjectPathKps.Count() >= 2)
                             {
-                                _logger.LogInformation($"{scalextricArcObjectPathKps.Count()} Scalextric ARC powerbases found.");
+                                _logger.LogInformation($"{deviceObjectPathKps.Count()} devices found.");
                             }
-                            await ObjectPathChangedAsync(scalextricArcObjectPathKps.First().Key, cancellationToken);
+                            await ObjectPathChangedAsync(deviceObjectPathKps.First().Key, cancellationToken);
                         }
 
                         try
@@ -234,31 +239,53 @@ namespace RazManagerIO.Host.Services.Utilities
         private void InterfaceAdded((Tmds.DBus.ObjectPath objectPath, IDictionary<string, IDictionary<string, object>> interfaces) args)
         {
             Console.WriteLine($"{args.objectPath} added.");
-            Console.WriteLine($"{args.objectPath} added with the following interfaces...");
-            foreach (var iface in args.interfaces)
-            {
-                Console.WriteLine(iface.Key);
-            }
+            // Console.WriteLine($"{args.objectPath} added with the following interfaces...");
+            // foreach (var iface in args.interfaces)
+            // {
+            //     Console.WriteLine(iface.Key);
+            // }
 
-            if (args.interfaces.Any(x => x.Key == bluezDeviceInterface))
-            {
-                LogDBusObject(args.objectPath, args.interfaces);
-            }
 
             if (args.interfaces.Keys.Any(x => x.StartsWith(bluezService)))
             {
                 var bluezInterfaceMetadata = new List<BluezInterfaceMetadata>();
                 foreach (var item in args.interfaces.Where(x => x.Key.StartsWith(bluezService)))
                 {
-                    if (item.Key == bluezAdapterInterface && args.interfaces.Any(x => x.Key == bluezGattManagerInterface) ||
-                        item.Key != bluezAdapterInterface)
-                    {
+                    //if (item.Key == bluezAdapterInterface)
+                    //{
+                        var match = item.Value.Any(x => x.Key == "Name" && x.Value.ToString() == _deviceName);
+                        //if (args.interfaces.Any(x => x.Key == bluezGattManagerInterface))
+                        //{
+                            // Console.WriteLine($"    {item.Key}");
+                            // foreach (var kp in item.Value)
+                            // {
+                            //     Console.WriteLine($"        {kp.Key}={kp.Value}");
+                            // }
+
+                            // var uuids = (String[])item.Value.SingleOrDefault(x => x.Key == "UUIDs").Value;
+                            // if (uuids is not null)
+                            // {
+                            //     match = uuids.Contains(_deviceUuid.ToString().ToLower());
+                            // }
+
+                        //}
+
+                        if (match)
+                        {
+                            if (args.interfaces.Any(x => x.Key == bluezDeviceInterface))
+                            {
+                                LogDBusObject(args.objectPath, args.interfaces);
+                            }
+
+                        }
+
+                        Console.WriteLine($"        Match={match}");
                         bluezInterfaceMetadata.Add(new BluezInterfaceMetadata
                         {
                             BluezInterface = item.Key,
-                            DeviceName = item.Value.SingleOrDefault(x => item.Key == bluezDeviceInterface && x.Key == "Name").Value?.ToString()?.Trim()
+                            Match = match                            
                         });
-                    }
+                    //}
                 }
 
                 _bluezObjectPathInterfaces.TryAdd(args.objectPath, bluezInterfaceMetadata);
@@ -280,15 +307,16 @@ namespace RazManagerIO.Host.Services.Utilities
                 try
                 {
                     _deviceProxy = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.IDevice1>(bluezService, objectPath);
+                    var deviceProxyName = (await _deviceProxy.GetNameAsync()).Trim();
 
                     if (await _deviceProxy.GetConnectedAsync())
                     {
-                        _logger.LogInformation("Scalextric ARC already connected.");
+                        _logger.LogInformation($"{deviceProxyName} already connected.");
                         _deviceObjectPath = objectPath;
                     }
                     else
                     {
-                        _logger.LogInformation($"Connecting to {(await _deviceProxy.GetNameAsync()).Trim()}... ({await _deviceProxy.GetAddressAsync()})");
+                        _logger.LogInformation($"Connecting to {deviceProxyName}... ({await _deviceProxy.GetAddressAsync()})");
                         bool success = false;
                         for (int i = 1; i <= 5; i++)
                         {
@@ -323,12 +351,12 @@ namespace RazManagerIO.Host.Services.Utilities
                         {
                             _deviceObjectPath = objectPath;
                             //await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Connected);
-                            _logger.LogInformation("Connected to Scalextric ARC.");
+                            _logger.LogInformation($"Connected to {deviceProxyName}.");
                         }
                         else
                         {
                             //await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Enabled);
-                            _logger.LogError("Could not connect to Scalextric ARC.");
+                            _logger.LogError($"Could not connect to {deviceProxyName}.");
                             await ResetAsync(objectPath);
                             return;
                         }
@@ -336,7 +364,7 @@ namespace RazManagerIO.Host.Services.Utilities
 
                     if (_deviceObjectPath != null)
                     {
-                        _logger.LogInformation("Initiating Scalextric ARC services.");
+                        _logger.LogInformation($"Initiating {deviceProxyName} services...");
 
                         //var deviceProperties = await _deviceProxy.GetAllAsync();
                         //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.Address), deviceProperties.Address);
@@ -362,7 +390,7 @@ namespace RazManagerIO.Host.Services.Utilities
                         {
                             for (int i = 1; i <= 5; i++)
                             {
-                                _logger.LogInformation("Waiting for Scalextric ARC services to be resolved...");
+                                _logger.LogInformation($"Waiting for {deviceProxyName} services to be resolved...");
                                 if (await _deviceProxy.GetServicesResolvedAsync())
                                 {
                                     break;
@@ -380,24 +408,19 @@ namespace RazManagerIO.Host.Services.Utilities
                             if (!await _deviceProxy.GetServicesResolvedAsync())
                             {
                                 //await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Enabled);
-                                _logger.LogWarning("Scalextric ARC services could not be resolved");
+                                _logger.LogWarning($"{deviceProxyName} services could not be resolved");
                                 await ResetAsync(_deviceObjectPath);
                                 return;
                             }
                         }
 
-                        Console.WriteLine("Bluez objects and interfaces");
-                        foreach (var item in _bluezObjectPathInterfaces)
-                        {
-                            Console.WriteLine($"{item.Key} {string.Join(", ", item.Value.Select(x => x.BluezInterface))}");
-                        }
-
                         //    _scalextricArcState.GattCharacteristics = new();
 
-                        //    foreach (var item in _bluezObjectPathInterfaces.Where(x => x.Key.ToString().StartsWith(_deviceObjectPath.ToString()!) && x.Value.Any(i => i.BluezInterface == bluezGattCharacteristicInterface)).OrderBy(x => x.Key))
-                        //    {
-                        //        var proxy = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.IGattCharacteristic1>(bluezService, item.Key);
-                        //        var properties = await proxy.GetAllAsync();
+                        foreach (var item in _bluezObjectPathInterfaces.Where(x => x.Key.ToString().StartsWith(_deviceObjectPath.ToString()!) && x.Value.Any(i => i.BluezInterface == bluezGattCharacteristicInterface)).OrderBy(x => x.Key))
+                        {
+                            var proxy = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.IGattCharacteristic1>(bluezService, item.Key);
+                            var properties = await proxy.GetAllAsync();
+                            Console.WriteLine($"{item.Key} {string.Join(", ", item.Value.Select(x => x.BluezInterface))} {properties.UUID}  {string.Join(", ", properties.Flags)}");
 
                         //        var gattCharacteristic = new GattCharacteristic();
 
@@ -653,8 +676,8 @@ namespace RazManagerIO.Host.Services.Utilities
                         //    }
 
                         //    await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Initialized);
-                        //    _logger.LogInformation("Scalextric ARC services have been initialized.");
-                        //}
+                        }
+                            _logger.LogInformation($"{deviceProxyName} services have been initialized.");
                     }
                 }
                 catch (Exception exception)
