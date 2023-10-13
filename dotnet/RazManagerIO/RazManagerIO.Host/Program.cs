@@ -58,14 +58,14 @@ builder.Services.AddSingleton<RazManagerIO.Host.Services.OsRelease.IOsReleaseSer
 //    )
 //);
 
-//builder.Services.AddSingleton(serviceProvider =>
-//{
-//    if (System.Environment.OSVersion.Platform == System.PlatformID.Unix)
-//    {
-//        return new System.Device.Gpio.GpioController();
-//    }
-//    return new System.Device.Gpio.GpioController(System.Device.Gpio.PinNumberingScheme.Logical, new RazManager.InputOutput.Utilities.WindowsDevelopmentGpioDriver());
-//});
+builder.Services.AddSingleton(serviceProvider =>
+{
+    if (System.Environment.OSVersion.Platform == System.PlatformID.Unix)
+    {
+        return new System.Device.Gpio.GpioController();
+    }
+    return new System.Device.Gpio.GpioController(System.Device.Gpio.PinNumberingScheme.Logical, new RazManagerIO.Host.Services.Utilities.DevelopmentGpioDriver());
+});
 
 //builder.Services.AddSingleton<RazManager.InputOutput.Services.Gpio.IGpioService>(serviceProvider =>
 //    new RazManager.InputOutput.Services.Gpio.GpioService
@@ -76,6 +76,9 @@ builder.Services.AddSingleton<RazManagerIO.Host.Services.OsRelease.IOsReleaseSer
 //    )
 //);
 
+
+builder.Services.AddSingleton<RazManagerIO.Host.Services.CarreraDigital.ICarreraDigitalBluezClient>(serviceProvider =>
+    new RazManagerIO.Host.Services.CarreraDigital.CarreraDigitalBluezClient(serviceProvider.GetRequiredService<ILogger<RazManagerIO.Host.Services.CarreraDigital.CarreraDigitalBluezClient>>()));
 
 builder.Services.AddHostedService<RazManagerIO.Host.Services.MemoryLogger.MemoryLoggerService>();
 builder.Services.AddHostedService<RazManagerIO.Host.Services.InputOutput.InputOutputService>();
