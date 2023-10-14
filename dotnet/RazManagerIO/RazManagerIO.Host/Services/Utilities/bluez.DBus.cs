@@ -403,7 +403,7 @@ namespace bluez.DBus
     }
 
     [Dictionary]
-    class Device1Properties
+    public class Device1Properties
     {
         private string _Address = default(string);
         public string Address

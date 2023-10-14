@@ -6,8 +6,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Tmds.DBus;
 using static bluez.DBus.Adapter1Extensions;
 using static bluez.DBus.Device1Extensions;
 
@@ -77,7 +79,10 @@ namespace RazManagerIO.Host.Services.Utilities
         public BluezClientBluetoothConnectionStateType BluetoothConnectionState => _bluetoothConnectionState;
 
 
-        private List<BluezClientGattCharacteristic> _gattCharacteristics = new();
+        private Device1Properties _deviceProperties;
+        public Device1Properties DeviceProperties => _deviceProperties;
+
+        protected List<BluezClientGattCharacteristic> _gattCharacteristics = new();
         public IEnumerable<BluezClientGattCharacteristic> GattCharacteristics => _gattCharacteristics;
 
 
@@ -86,7 +91,7 @@ namespace RazManagerIO.Host.Services.Utilities
             Task? watchInterfacesAddedTask = null;
             Task? watchInterfacesRemovedTask = null;
 
-            //await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Disabled);
+            await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Disabled);
 
             if (Environment.OSVersion.Platform != PlatformID.Unix)
             {
@@ -118,7 +123,7 @@ namespace RazManagerIO.Host.Services.Utilities
                     if (string.IsNullOrEmpty(bluezAdapterObjectPathKp.Key.ToString()))
                     {
                         _logger.LogCritical($"{bluezAdapterInterface} does not exist. Please install BlueZ (and an adapter for the needed Bluetooth Low Energy functionality), and then re-start this application.");
-                        //await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Disabled);
+                        await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Disabled);
                         return;
                     }
 
@@ -149,7 +154,7 @@ namespace RazManagerIO.Host.Services.Utilities
                     );
 
                     _logger.LogInformation($"BlueZ initialization done. Trying to find the devive...");
-                    //await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Enabled);
+                    await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Enabled);
 
                     while (!cancellationToken.IsCancellationRequested)
                     {
@@ -177,7 +182,7 @@ namespace RazManagerIO.Host.Services.Utilities
                                 await _bluezAdapterProxy.StartDiscoveryAsync();
                                 _discoveryStarted = true;
                             }
-                            //await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Discovering);
+                            await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Discovering);
                         }
                         else
                         {
@@ -350,12 +355,12 @@ namespace RazManagerIO.Host.Services.Utilities
                         if (success)
                         {
                             _deviceObjectPath = objectPath;
-                            //await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Connected);
+                            await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Connected);
                             _logger.LogInformation($"Connected to {deviceProxyName}.");
                         }
                         else
                         {
-                            //await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Enabled);
+                            await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Enabled);
                             _logger.LogError($"Could not connect to {deviceProxyName}.");
                             await ResetAsync(objectPath);
                             return;
@@ -366,25 +371,9 @@ namespace RazManagerIO.Host.Services.Utilities
                     {
                         _logger.LogInformation($"Initiating {deviceProxyName} services...");
 
-                        //var deviceProperties = await _deviceProxy.GetAllAsync();
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.Address), deviceProperties.Address);
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.AddressType), deviceProperties.AddressType);
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.Class), deviceProperties.Class.ToString());
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.Appearance), deviceProperties.Appearance.ToString());
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.Icon), deviceProperties.Icon);
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.Paired), deviceProperties.Paired.ToString());
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.Trusted), deviceProperties.Trusted.ToString());
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.Blocked), deviceProperties.Blocked.ToString());
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.LegacyPairing), deviceProperties.LegacyPairing.ToString());
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.RSSI), deviceProperties.RSSI.ToString());
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.Connected), deviceProperties.Connected.ToString());
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.UUIDs), string.Join(", ", deviceProperties.UUIDs!));
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.Modalias), deviceProperties.Modalias);
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.Adapter), deviceProperties.Adapter.ToString());
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.TxPower), deviceProperties.TxPower.ToString());
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.ServicesResolved), deviceProperties.ServicesResolved.ToString());
-                        //await _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(nameof(deviceProperties.WakeAllowed), deviceProperties.WakeAllowed.ToString());
-                        //await _deviceProxy.WatchPropertiesAsync(scalextricArcWatchProperties);
+                        _deviceProperties = await _deviceProxy.GetAllAsync();
+                        await DevicePropertiesChangedAsync();
+                        await _deviceProxy.WatchPropertiesAsync(DevicePropertiesWatchProperties);
 
                         if (!await _deviceProxy.GetServicesResolvedAsync())
                         {
@@ -407,7 +396,7 @@ namespace RazManagerIO.Host.Services.Utilities
 
                             if (!await _deviceProxy.GetServicesResolvedAsync())
                             {
-                                //await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Enabled);
+                                await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Enabled);
                                 _logger.LogWarning($"{deviceProxyName} services could not be resolved");
                                 await ResetAsync(_deviceObjectPath);
                                 return;
@@ -416,6 +405,8 @@ namespace RazManagerIO.Host.Services.Utilities
 
                         //    _scalextricArcState.GattCharacteristics = new();
 
+                        _gattCharacteristics = new();
+
                         foreach (var item in _bluezObjectPathInterfaces.Where(x => x.Key.ToString().StartsWith(_deviceObjectPath.ToString()!) && x.Value.Any(i => i.BluezInterface == bluezGattCharacteristicInterface)).OrderBy(x => x.Key))
                         {
                             var proxy = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.IGattCharacteristic1>(bluezService, item.Key);
@@ -423,263 +414,9 @@ namespace RazManagerIO.Host.Services.Utilities
                             Console.WriteLine($"{item.Key} {string.Join(", ", item.Value.Select(x => x.BluezInterface))} {properties.UUID}  {string.Join(", ", properties.Flags)}");
 
                             await GattCharacteristicResolvedAsync(properties);
-
-                        //        var gattCharacteristic = new GattCharacteristic();
-
-                        //        if (!string.IsNullOrEmpty(properties.UUID))
-                        //        {
-                        //            gattCharacteristic.uuid = properties.UUID;
-
-                        //            switch (properties.UUID)
-                        //            {
-                        //                case manufacturerNameCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Manufacturer name";
-                        //                    break;
-
-                        //                case modelNumberCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Model number";
-                        //                    break;
-
-                        //                case hardwareRevisionCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Hardware revision";
-                        //                    break;
-
-                        //                case firmwareRevisionCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Firmware revision";
-                        //                    break;
-
-                        //                case softwareRevisionCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Software revision";
-                        //                    break;
-
-                        //                case dfuControlPointCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "DFU control point";
-                        //                    break;
-
-                        //                case dfuPacketCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "DFU packet";
-                        //                    break;
-
-                        //                case dfuRevisionCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "DFU revision";
-                        //                    break;
-
-                        //                case serviceChangedCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Service changed";
-                        //                    break;
-
-                        //                case carIdCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Car ID";
-                        //                    break;
-
-                        //                case commandCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Command";
-                        //                    break;
-
-                        //                case slotCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Slot";
-                        //                    break;
-
-                        //                case throttleCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Throttle";
-                        //                    break;
-
-                        //                case throttleProfile1CharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Throttle profile 1";
-                        //                    break;
-
-                        //                case throttleProfile2CharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Throttle profile 2";
-                        //                    break;
-
-                        //                case throttleProfile3CharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Throttle profile 3";
-                        //                    break;
-
-                        //                case throttleProfile4CharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Throttle profile 4";
-                        //                    break;
-
-                        //                case throttleProfile5CharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Throttle profile 5";
-                        //                    break;
-
-                        //                case throttleProfile6CharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Throttle profile 6";
-                        //                    break;
-
-                        //                case trackCharacteristicUuid:
-                        //                    gattCharacteristic.Name = "Track";
-                        //                    break;
-
-                        //                default:
-                        //                    break;
-                        //            }
-                        //        }
-
-                        //        if (properties.Flags is not null)
-                        //        {
-                        //            foreach (var flag in properties.Flags)
-                        //            {
-                        //                if (!string.IsNullOrEmpty(flag))
-                        //                {
-                        //                    gattCharacteristic.Flags.Add(new BluezClientGattCharacteristicFlag
-                        //                    {
-                        //                        Flag = flag
-                        //                    });
-                        //                }
-                        //            }
-
-                        //            if (properties.Flags!.Contains("read"))
-                        //            {
-                        //                var value = await proxy.ReadValueAsync(new Dictionary<string, object>());
-                        //                gattCharacteristic.Length = value.Length;
-                        //                if (value.Length > 0)
-                        //                {
-                        //                    if (!value.Any(x => x < 32))
-                        //                    {
-                        //                        gattCharacteristic.Value = System.Text.Encoding.UTF8.GetString(value);
-                        //                        if (properties.UUID == modelNumberCharacteristicUuid)
-                        //                        {
-                        //                            await _scalextricArcState.ConnectionState.SetModelNumberAsync(gattCharacteristic.Value);
-                        //                        }
-                        //                    }
-
-                        //                    if (properties.UUID == carIdCharacteristicUuid)
-                        //                    {
-                        //                        await _scalextricArcState.CarIdState.SetAsync
-                        //                        (
-                        //                            value[0],
-                        //                            false
-                        //                        );
-                        //                    }
-
-                        //                    if (properties.UUID == commandCharacteristicUuid)
-                        //                    {
-                        //                        await _scalextricArcState.CommandState.SetAsync
-                        //                        (
-                        //                            (CommandType)value[0],
-                        //                            (byte)(value[1] & 0b111111),
-                        //                            (value[1] & 0b1000000) > 0,
-                        //                            (value[1] & 0b10000000) > 0,
-                        //                            value[7],
-                        //                            value[13],
-                        //                            (value[19] & 0b1) > 0,
-                        //                            (byte)(value[2] & 0b111111),
-                        //                            (value[2] & 0b1000000) > 0,
-                        //                            (value[2] & 0b10000000) > 0,
-                        //                            value[8],
-                        //                            value[14],
-                        //                            (value[19] & 0b10) > 0,
-                        //                            (byte)(value[3] & 0b111111),
-                        //                            (value[3] & 0b1000000) > 0,
-                        //                            (value[3] & 0b10000000) > 0,
-                        //                            value[9],
-                        //                            value[15],
-                        //                            (value[19] & 0b100) > 0,
-                        //                            (byte)(value[4] & 0b111111),
-                        //                            (value[4] & 0b1000000) > 0,
-                        //                            (value[4] & 0b10000000) > 0,
-                        //                            value[10],
-                        //                            value[16],
-                        //                            (value[19] & 0b1000) > 0,
-                        //                            (byte)(value[5] & 0b111111),
-                        //                            (value[5] & 0b1000000) > 0,
-                        //                            (value[5] & 0b10000000) > 0,
-                        //                            value[11],
-                        //                            value[17],
-                        //                            (value[19] & 0b10000) > 0,
-                        //                            (byte)(value[6] & 0b111111),
-                        //                            (value[6] & 0b1000000) > 0,
-                        //                            (value[6] & 0b10000000) > 0,
-                        //                            value[12],
-                        //                            value[18],
-                        //                            (value[19] & 0b100000) > 0,
-                        //                            false
-                        //                        );
-                        //                    }
-
-                        //                    if (properties.UUID == trackCharacteristicUuid)
-                        //                    {
-                        //                        await _scalextricArcState.TrackState.SetAsync
-                        //                        (
-                        //                            value[0],
-                        //                            value[1],
-                        //                            value[2],
-                        //                            (uint)(value[3] + value[4] * 256 + value[5] * 65536 + value[6] * 16777216)
-                        //                        );
-                        //                    }
-                        //                }
-                        //            }
-                        //        }
-
-                        //        if (properties.UUID == carIdCharacteristicUuid)
-                        //        {
-                        //            _carIdCharacteristicProxy = proxy;
-                        //        }
-
-                        //        if (properties.UUID == commandCharacteristicUuid)
-                        //        {
-                        //            _commandCharacteristicProxy = proxy;
-                        //        }
-
-                        //        if (properties.UUID == slotCharacteristicUuid)
-                        //        {
-                        //            _slotCharacteristicProxy = proxy;
-                        //            await _slotCharacteristicProxy.StartNotifyAsync();
-                        //            _slotCharacteristicWatchTask = _slotCharacteristicProxy.WatchPropertiesAsync(slotCharacteristicWatchProperties);
-                        //        }
-
-                        //        if (properties.UUID == throttleCharacteristicUuid)
-                        //        {
-                        //            _throttleCharacteristicProxy = proxy;
-                        //            await _throttleCharacteristicProxy.StartNotifyAsync();
-                        //            _throttleCharacteristicWatchTask = _throttleCharacteristicProxy.WatchPropertiesAsync(throttleCharacteristicWatchProperties);
-                        //        }
-
-                        //        if (properties.UUID == throttleProfile1CharacteristicUuid)
-                        //        {
-                        //            _throttleProfile1CharacteristicProxy = proxy;
-                        //        }
-
-                        //        if (properties.UUID == throttleProfile2CharacteristicUuid)
-                        //        {
-                        //            _throttleProfile2CharacteristicProxy = proxy;
-                        //        }
-
-                        //        if (properties.UUID == throttleProfile3CharacteristicUuid)
-                        //        {
-                        //            _throttleProfile3CharacteristicProxy = proxy;
-                        //        }
-
-                        //        if (properties.UUID == throttleProfile4CharacteristicUuid)
-                        //        {
-                        //            _throttleProfile4CharacteristicProxy = proxy;
-                        //        }
-
-                        //        if (properties.UUID == throttleProfile5CharacteristicUuid)
-                        //        {
-                        //            _throttleProfile5CharacteristicProxy = proxy;
-                        //        }
-
-                        //        if (properties.UUID == throttleProfile6CharacteristicUuid)
-                        //        {
-                        //            _throttleProfile6CharacteristicProxy = proxy;
-                        //        }
-
-                        //        if (properties.UUID == trackCharacteristicUuid)
-                        //        {
-                        //            _trackCharacteristicProxy = proxy;
-                        //            await _trackCharacteristicProxy.StartNotifyAsync();
-                        //            _trackCharacteristicWatchTask = _trackCharacteristicProxy.WatchPropertiesAsync(trackCharacteristicWatchProperties);
-                        //        }
-
-                        //        _scalextricArcState.GattCharacteristics.Add(gattCharacteristic);
-                        //    }
-
                         }
-                        //    await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Initialized);
-                            _logger.LogInformation($"{deviceProxyName} services have been initialized.");
+                        await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Initialized);
+                        _logger.LogInformation($"{deviceProxyName} services have been initialized.");
                     }
                 }
                 catch (Exception exception)
@@ -730,20 +467,23 @@ namespace RazManagerIO.Host.Services.Utilities
 
             //_trackCharacteristicProxy = null;
 
+            string? deviceProxyName = null; ;
+
             if (_deviceProxy is not null)
             {
                 if (await _deviceProxy.GetConnectedAsync())
                 {
+                    deviceProxyName = (await _deviceProxy.GetNameAsync()).Trim();
                     try
                     {
-                        _logger.LogInformation("Disconnecting Scalextric ARC...");
+                        _logger.LogInformation($"Disconnecting {deviceProxyName}...");
                         await _deviceProxy.DisconnectAsync();
                     }
                     catch (Exception exception)
                     {
                         _logger.LogError(exception, exception.Message);
                     }
-                    _logger.LogInformation("Scalextric ARC disconnected.");
+                    _logger.LogInformation($"{deviceProxyName} disconnected.");
                 }
 
                 _deviceProxy = null;
@@ -753,41 +493,19 @@ namespace RazManagerIO.Host.Services.Utilities
             {
                 try
                 {
-                    _logger.LogInformation("Removing Scalextric ARC...");
+                    _logger.LogInformation($"Removing {deviceProxyName}...");
                     await _bluezAdapterProxy.RemoveDeviceAsync(objectPath.Value);
                 }
                 catch (Exception exception)
                 {
                     _logger.LogError(exception, exception.Message);
                 }
-                _logger.LogInformation("Scalextric ARC removed.");
+                _logger.LogInformation($"{deviceProxyName} removed.");
             }
 
             _deviceObjectPath = null;
         }
 
-        //private void scalextricArcWatchProperties(Tmds.DBus.PropertyChanges propertyChanges)
-        //{
-        //    foreach (var item in propertyChanges.Changed)
-        //    {
-        //        switch (item.Value)
-        //        {
-        //            case string[]:
-        //                _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(item.Key, String.Join(", ", (string[])item.Value)).Wait();
-        //                break;
-
-        //            case Dictionary<ushort, object>:
-        //                break;
-
-        //            case Dictionary<string, object>:
-        //                break;
-
-        //            default:
-        //                _scalextricArcState.ConnectionState.SetBluetoothPropertyAsync(item.Key, item.Value.ToString()).Wait();
-        //                break;
-        //        }
-        //    }
-        //}
 
         //private void slotCharacteristicWatchProperties(Tmds.DBus.PropertyChanges propertyChanges)
         //{
@@ -876,6 +594,78 @@ namespace RazManagerIO.Host.Services.Utilities
         //        }
         //    }
         //}
+
+        private Task _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType bluezClientBluetoothConnectionStateType)
+        {
+            _bluetoothConnectionState = bluezClientBluetoothConnectionStateType;
+            return BluetoothConnectionStateChangedAsync();
+        }
+
+
+        protected abstract Task BluetoothConnectionStateChangedAsync();
+
+        protected abstract Task DevicePropertiesChangedAsync();
+
+
+        private void DevicePropertiesWatchProperties(Tmds.DBus.PropertyChanges propertyChanges)
+        {
+            foreach (var item in propertyChanges.Changed)
+            {
+                Console.WriteLine($"Property change: {item.Key}={item.Value}");
+                switch (item.Key)
+                {
+                    case nameof(Device1Properties.Address):
+                        _deviceProperties.Address = item.Value.ToString()!;
+                        break;
+
+                    case nameof(Device1Properties.AddressType):
+                        _deviceProperties.AddressType = item.Value.ToString()!;
+                        break;
+
+                    case nameof(Device1Properties.Paired):
+                        _deviceProperties.Paired = (bool)item.Value;
+                        break;
+
+                    case nameof(Device1Properties.Trusted):
+                        _deviceProperties.Trusted = (bool)item.Value;
+                        break;
+
+                    case nameof(Device1Properties.Blocked):
+                        _deviceProperties.Blocked = (bool)item.Value;
+                        break;
+
+                    case nameof(Device1Properties.LegacyPairing):
+                        _deviceProperties.LegacyPairing = (bool)item.Value;
+                        break;
+
+                    case nameof(Device1Properties.WakeAllowed):
+                        _deviceProperties.WakeAllowed = (bool)item.Value;
+                        break;
+
+                    case nameof(Device1Properties.RSSI):
+                        _deviceProperties.RSSI = (short)item.Value;
+                        break;
+
+                    case nameof(Device1Properties.TxPower):
+                        _deviceProperties.TxPower = (short)item.Value;
+                        break;
+
+                    case nameof(Device1Properties.Connected):
+                        _deviceProperties.Connected = (bool)item.Value;
+                        break;
+
+                    case nameof(Device1Properties.ServicesResolved):
+                        _deviceProperties.ServicesResolved = (bool)item.Value;
+                        break;
+
+                    default:
+                        _logger.LogWarning($"Unhandled property change: {item.Key}={item.Value}");
+                        break;
+                }
+            }
+            DevicePropertiesChangedAsync().Wait();
+        }
+
 
 
         private void LogDBusObject(Tmds.DBus.ObjectPath objectPath, IDictionary<string, IDictionary<string, object>> interfaces)
