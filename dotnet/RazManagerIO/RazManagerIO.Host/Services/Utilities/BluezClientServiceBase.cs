@@ -192,7 +192,7 @@ namespace RazManagerIO.Host.Services.Utilities
                             {
                                 _logger.LogInformation($"{deviceObjectPathKps.Count()} devices found.");
                             }
-                            await ObjectPathChangedAsync(deviceObjectPathKps.First().Key, cancellationToken);
+                            await CheckObjectPathAsync(deviceObjectPathKps.First().Key, cancellationToken);
                         }
 
                         try
@@ -300,7 +300,7 @@ namespace RazManagerIO.Host.Services.Utilities
         }
 
 
-        private async Task ObjectPathChangedAsync(Tmds.DBus.ObjectPath objectPath, CancellationToken cancellationToken)
+        private async Task CheckObjectPathAsync(Tmds.DBus.ObjectPath objectPath, CancellationToken cancellationToken)
         {
             if (_deviceObjectPath is null)
             {
@@ -421,6 +421,8 @@ namespace RazManagerIO.Host.Services.Utilities
                             var proxy = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.IGattCharacteristic1>(bluezService, item.Key);
                             var properties = await proxy.GetAllAsync();
                             Console.WriteLine($"{item.Key} {string.Join(", ", item.Value.Select(x => x.BluezInterface))} {properties.UUID}  {string.Join(", ", properties.Flags)}");
+
+                            await GattCharacteristicResolvedAsync(properties);
 
                         //        var gattCharacteristic = new GattCharacteristic();
 
@@ -675,8 +677,8 @@ namespace RazManagerIO.Host.Services.Utilities
                         //        _scalextricArcState.GattCharacteristics.Add(gattCharacteristic);
                         //    }
 
-                        //    await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Initialized);
                         }
+                        //    await _scalextricArcState.ConnectionState.SetBluetoothStateAsync(BluetoothConnectionStateType.Initialized);
                             _logger.LogInformation($"{deviceProxyName} services have been initialized.");
                     }
                 }
@@ -686,6 +688,9 @@ namespace RazManagerIO.Host.Services.Utilities
                 }
             }
         }
+
+        
+        protected abstract Task GattCharacteristicResolvedAsync(GattCharacteristic1Properties properties);
 
 
         private async Task ResetAsync(Tmds.DBus.ObjectPath? objectPath)

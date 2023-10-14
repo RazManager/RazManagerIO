@@ -822,7 +822,7 @@ namespace bluez.DBus
     }
 
     [Dictionary]
-    class GattCharacteristic1Properties
+    public class GattCharacteristic1Properties
     {
         private string _UUID = default(string);
         public string UUID
