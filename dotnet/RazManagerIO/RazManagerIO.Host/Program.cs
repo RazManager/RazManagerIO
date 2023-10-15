@@ -80,6 +80,9 @@ builder.Services.AddSingleton(serviceProvider =>
 builder.Services.AddSingleton<RazManagerIO.Host.Services.CarreraDigital.ICarreraDigitalBluezClient>(serviceProvider =>
     new RazManagerIO.Host.Services.CarreraDigital.CarreraDigitalBluezClient(serviceProvider.GetRequiredService<ILogger<RazManagerIO.Host.Services.CarreraDigital.CarreraDigitalBluezClient>>()));
 
+builder.Services.AddSingleton<RazManagerIO.Host.Services.CarreraDigital.ICarreraDigitalBluezServer>(serviceProvider =>
+    new RazManagerIO.Host.Services.CarreraDigital.CarreraDigitalBluezServer(serviceProvider.GetRequiredService<ILogger<RazManagerIO.Host.Services.CarreraDigital.CarreraDigitalBluezServer>>()));
+
 builder.Services.AddHostedService<RazManagerIO.Host.Services.MemoryLogger.MemoryLoggerService>();
 builder.Services.AddHostedService<RazManagerIO.Host.Services.InputOutput.InputOutputService>();
 

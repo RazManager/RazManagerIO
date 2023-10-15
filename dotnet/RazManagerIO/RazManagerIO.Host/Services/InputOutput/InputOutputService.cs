@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RazManagerIO.Host.Services.CarreraDigital;
 using RazManagerIO.Host.Services.CpuInfo;
@@ -20,12 +19,14 @@ namespace RazManagerIO.Host.Services.InputOutput
         private readonly IOsReleaseService _osReleaseService;
         private readonly Channel<bool> _resetChannel;
         private readonly ICarreraDigitalBluezClient _carreraDigitalBluezClient;
+        private readonly ICarreraDigitalBluezServer _carreraDigitalBluezServer;
         private readonly ILogger<InputOutputService> _logger;
 
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private Task? _resetTask;
 
         private Task? _carreraDigitalBluezClientTask;
+        private Task? _carreraDigitalBluezServerTask;
 
 
         public InputOutputService(GpioController gpioController,
@@ -33,6 +34,7 @@ namespace RazManagerIO.Host.Services.InputOutput
                                   IOsReleaseService osReleaseService,
                                   Channel<bool> resetChannel,
                                   ICarreraDigitalBluezClient carreraDigitalBluezClient,
+                                  ICarreraDigitalBluezServer carreraDigitalBluezServer,
                                   ILogger<InputOutputService> logger)
         {
             _gpioController = gpioController;
@@ -40,6 +42,7 @@ namespace RazManagerIO.Host.Services.InputOutput
             _osReleaseService = osReleaseService;
             _resetChannel = resetChannel;
             _carreraDigitalBluezClient = carreraDigitalBluezClient;
+            _carreraDigitalBluezServer = carreraDigitalBluezServer;
             _logger = logger;
         }
 
@@ -49,7 +52,8 @@ namespace RazManagerIO.Host.Services.InputOutput
             _cancellationTokenSource.Dispose();
             _cancellationTokenSource = new CancellationTokenSource();
 
-            _carreraDigitalBluezClientTask = _carreraDigitalBluezClient.ExecuteAsync(_cancellationTokenSource.Token);
+            //_carreraDigitalBluezClientTask = _carreraDigitalBluezClient.ExecuteAsync(_cancellationTokenSource.Token);
+            _carreraDigitalBluezServerTask = _carreraDigitalBluezServer.ExecuteAsync(_cancellationTokenSource.Token);
 
             if (_resetTask is null)
             {
