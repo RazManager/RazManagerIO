@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Data;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using bluez.DBus;
-using Microsoft.AspNetCore.Server.IIS.Core;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualBasic;
 using RazManagerIO.Host.Services.Utilities;
 
 
@@ -12,7 +11,17 @@ namespace RazManagerIO.Host.Services.CarreraDigital
 {
     public class CarreraDigitalBluezClient : BluezClientServiceBase, ICarreraDigitalBluezClient
     {
+        private const string notiFyCharacteristicUuid = "39df9999-b1b4-b90b-57f1-7144ae4e4a6a";
+        private bluez.DBus.IGattCharacteristic1? _notiFyCharacteristicProxy = null;
+        private Task? _notiFyCharacteristicWatchTask = null;
+
+        private const string writeCharacteristicUuid = "39df8888-b1b4-b90b-57f1-7144ae4e4a6a";
+        private bluez.DBus.IGattCharacteristic1? _writeCharacteristicProxy = null;
+
+        
+     
         private readonly ILogger<CarreraDigitalBluezClient> _logger;
+
 
         public CarreraDigitalBluezClient(ILogger<CarreraDigitalBluezClient> logger) : base("Control_Unit", new System.Guid("39df7777-b1b4-b90b-57f1-7144ae4e4a6a"), logger)
         {
@@ -20,10 +29,15 @@ namespace RazManagerIO.Host.Services.CarreraDigital
         }
 
 
-        protected override Task BluetoothConnectionStateChangedAsync()
+        protected override async Task BluetoothConnectionStateChangedAsync()
         {
             _logger.LogInformation(BluetoothConnectionState.ToString());
-            throw new System.NotImplementedException();
+
+            if (this.BluetoothConnectionState == BluezClientBluetoothConnectionStateType.Initialized)
+            {                
+                var value = System.Text.ASCIIEncoding.ASCII.GetBytes("0");
+                await _writeCharacteristicProxy.WriteValueAsync(value, new Dictionary<string, object>());
+            }
         }
 
 
@@ -33,51 +47,44 @@ namespace RazManagerIO.Host.Services.CarreraDigital
         }
 
 
-        protected override Task GattCharacteristicResolvedAsync(GattCharacteristic1Properties properties)
+        protected override async Task GattCharacteristicResolvedAsync(IGattCharacteristic1 proxy, GattCharacteristic1Properties properties)
         {
-            var gattCharacteristic = (BluezClientGattCharacteristic)properties;
+            var gattCharacteristic = new BluezClientGattCharacteristic(properties);
 
             if (!string.IsNullOrEmpty(properties.UUID))
             {
                 switch (properties.UUID)
                 {
-                    //case manufacturerNameCharacteristicUuid:
-                    //    gattCharacteristic.Name = "Manufacturer name";
-                    //_commandCharacteristicProxy = proxy;
-                    //    break;
+                    case writeCharacteristicUuid:
+                        _writeCharacteristicProxy = proxy;
+                        break;
 
-                    //case modelNumberCharacteristicUuid:
-                    //    gattCharacteristic.Name = "Model number";
-                //_slotCharacteristicProxy = proxy;
-                //await _slotCharacteristicProxy.StartNotifyAsync();
-                //_slotCharacteristicWatchTask = _slotCharacteristicProxy.WatchPropertiesAsync(slotCharacteristicWatchProperties);
-                //    break;
+                    case notiFyCharacteristicUuid:
+                        _notiFyCharacteristicProxy = proxy;
+                        await _notiFyCharacteristicProxy.StartNotifyAsync();
+                        _notiFyCharacteristicWatchTask = _notiFyCharacteristicProxy.WatchPropertiesAsync(notifyCharacteristicWatchProperties);
+                        break;
 
                 default:
-                        break;
+                    break;
                 }
             }
             _gattCharacteristics.Add(gattCharacteristic);
         }
 
 
-        private void trackCharacteristicWatchProperties(Tmds.DBus.PropertyChanges propertyChanges)
+        private void notifyCharacteristicWatchProperties(Tmds.DBus.PropertyChanges propertyChanges)
         {
             foreach (var item in propertyChanges.Changed)
             {
+                Console.WriteLine($"notifyCharacteristicWatchProperties: {item.Key} {item.Value}");
                 if (item.Key == "Value")
                 {
                     var value = (byte[])item.Value;
-                    _scalextricArcState.TrackState!.SetAsync
-                    (
-                        value[0],
-                        value[1],
-                        value[2],
-                        (uint)(value[3] + value[4] * 256 + value[5] * 65536 + value[6] * 16777216)
-                    );
+                    var valueString = System.Text.ASCIIEncoding.ASCII.GetString(value);
+                    Console.WriteLine(valueString);
                 }
             }
         }
-
     }
 }

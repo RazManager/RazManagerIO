@@ -807,7 +807,7 @@ namespace bluez.DBus
     }
 
     [DBusInterface("org.bluez.GattCharacteristic1")]
-    interface IGattCharacteristic1 : IDBusObject
+    public interface IGattCharacteristic1 : IDBusObject
     {
         Task<byte[]> ReadValueAsync(IDictionary<string, object> Options);
         Task WriteValueAsync(byte[] Value, IDictionary<string, object> Options);

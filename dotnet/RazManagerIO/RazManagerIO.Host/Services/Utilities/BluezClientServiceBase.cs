@@ -413,7 +413,7 @@ namespace RazManagerIO.Host.Services.Utilities
                             var properties = await proxy.GetAllAsync();
                             Console.WriteLine($"{item.Key} {string.Join(", ", item.Value.Select(x => x.BluezInterface))} {properties.UUID}  {string.Join(", ", properties.Flags)}");
 
-                            await GattCharacteristicResolvedAsync(properties);
+                            await GattCharacteristicResolvedAsync(proxy, properties);
                         }
                         await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Initialized);
                         _logger.LogInformation($"{deviceProxyName} services have been initialized.");
@@ -427,7 +427,7 @@ namespace RazManagerIO.Host.Services.Utilities
         }
 
         
-        protected abstract Task GattCharacteristicResolvedAsync(GattCharacteristic1Properties properties);
+        protected abstract Task GattCharacteristicResolvedAsync(IGattCharacteristic1 proxy, GattCharacteristic1Properties properties);
 
 
         private async Task ResetAsync(Tmds.DBus.ObjectPath? objectPath)
