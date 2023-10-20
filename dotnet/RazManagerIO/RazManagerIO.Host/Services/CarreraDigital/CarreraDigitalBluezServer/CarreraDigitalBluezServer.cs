@@ -4,6 +4,9 @@ using System.Threading;
 using System;
 using Microsoft.Extensions.Logging;
 using System.Linq;
+using Microsoft.AspNetCore.Server.Kestrel;
+using bluez.DBus;
+using Tmds.DBus;
 
 namespace RazManagerIO.Host.Services.CarreraDigital
 {
@@ -14,6 +17,7 @@ namespace RazManagerIO.Host.Services.CarreraDigital
         public const string bluezGattManagerInterface = "org.bluez.GattManager1";
         public const string bluezDeviceInterface = "org.bluez.Device1";
         public const string bluezGattCharacteristicInterface = "org.bluez.GattCharacteristic1";
+        public const string bluezLEAdvertisingManagerInterface = "org.bluez.LEAdvertisingManager1";
 
         private readonly ILogger<CarreraDigitalBluezServer> _logger;
 
@@ -38,24 +42,42 @@ namespace RazManagerIO.Host.Services.CarreraDigital
 
             try
             {
+                var dBusSystem = Tmds.DBus.Connection.System;
 
                 // Find all D-Bus objects and their interfaces
                 var objectManager = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.IObjectManager>(bluezService, Tmds.DBus.ObjectPath.Root);
                 var dBusObjects = await objectManager.GetManagedObjectsAsync();
 
-                var ifaces = dBusObjects.SelectMany(dBusObject => dBusObject.Value, (dBusObject, iface) => new { dBusObject, iface });
+                var dBusInterfaces = dBusObjects.SelectMany(dBusObject => dBusObject.Value, (ObjectPath, iface) => new { ObjectPath.Key, iface});
 
-                //foreach (var item in args.interfaces.Where(x => x.Key.StartsWith(bluezService)))
+                var bluezAdapterInterfaceKp = dBusInterfaces.FirstOrDefault(x => x.iface.Key == bluezAdapterInterface);
+                if (bluezAdapterInterfaceKp is null)
+                {
+                    _logger.LogCritical($"{bluezAdapterInterface} does not exist. Please install BlueZ (and an adapter for the needed Bluetooth Low Energy functionality), and then re-start this application.");
+                    //await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Disabled);
+                    return;
+                }
+
+                var bluezAdapterProxy = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.IAdapter1>(bluezService, bluezAdapterInterfaceKp.Key);
+                await bluezAdapterProxy.SetPoweredAsync(true);
+
+                var advertisingManagerInterfaceKp = dBusInterfaces.FirstOrDefault(x => x.iface.Key == bluezLEAdvertisingManagerInterface);
+                if (advertisingManagerInterfaceKp is null)
+                {
+                    _logger.LogCritical($"{bluezLEAdvertisingManagerInterface} does not exist. Please install BlueZ (and an adapter for the needed Bluetooth Low Energy functionality), and then re-start this application.");
+                    //await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Disabled);
+                    return;
+                }
+
+                var advertisingManagerProxy = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.ILEAdvertisingManager1>(bluezService, advertisingManagerInterfaceKp.Key);
+
+                //var o = new ObjectPath("/org/bluez/hci0/dev_E1_85_5E_ED_00_00");
+                //dBusSystem.RegisterObjectAsync(o);
+
+                await advertisingManagerProxy.RegisterAdvertisementAsync()
 
 
-                //if (string.IsNullOrEmpty(bluezAdapterObjectPathKp.Key.ToString()))
-                //{
-                //    _logger.LogCritical($"{bluezAdapterInterface} does not exist. Please install BlueZ (and an adapter for the needed Bluetooth Low Energy functionality), and then re-start this application.");
-                //    //await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Disabled);
-                //    return;
-                //}
 
-                //_bluezAdapterProxy = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.IAdapter1>(bluezService, bluezAdapterObjectPathKp.Key);
 
             }
 

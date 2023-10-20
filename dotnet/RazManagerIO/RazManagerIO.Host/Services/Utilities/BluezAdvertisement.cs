@@ -1,9 +1,9 @@
-﻿using bluez.DBus;
+using bluez.DBus;
 
 
 namespace RazManagerIO.Host.Services.Utilities
 {
-    public enum BluezClientBluetoothConnectionStateType
+    public enum BluezAdvertisement : ILEAdvertisement1
     {
         Disabled,
         Enabled,
