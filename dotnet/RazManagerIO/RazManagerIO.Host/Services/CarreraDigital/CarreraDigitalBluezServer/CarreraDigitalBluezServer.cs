@@ -7,6 +7,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Server.Kestrel;
 using bluez.DBus;
 using Tmds.DBus;
+using System.Collections.Generic;
 
 namespace RazManagerIO.Host.Services.CarreraDigital
 {
@@ -71,14 +72,19 @@ namespace RazManagerIO.Host.Services.CarreraDigital
 
                 var advertisingManagerProxy = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.ILEAdvertisingManager1>(bluezService, advertisingManagerInterfaceKp.Key);
 
+                var advertisementProperties = new LEAdvertisement1Properties
+                {
+                    Type = "peripheral",
+                    ServiceUUIDs = new[] { "12345678-1234-5678-1234-56789abcdef0" },
+                    LocalName = "A"
+                };
+
+                var advertisement = new BluezAdvertisement(new ObjectPath("/org/bluez/example/advertisement0"), advertisementProperties);
+
                 //var o = new ObjectPath("/org/bluez/hci0/dev_E1_85_5E_ED_00_00");
                 //dBusSystem.RegisterObjectAsync(o);
 
-                await advertisingManagerProxy.RegisterAdvertisementAsync()
-
-
-
-
+                await advertisingManagerProxy.RegisterAdvertisementAsync(advertisement.ObjectPath, new Dictionary<string, object>());
             }
 
             catch (Tmds.DBus.DBusException exception)
