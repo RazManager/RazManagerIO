@@ -43,7 +43,9 @@ namespace RazManagerIO.Host.Services.CarreraDigital
 
             try
             {
-                var dBusSystem = Tmds.DBus.Connection.System;
+                //var dBusSystem = Tmds.DBus.Connection.System;
+                var dBusSystem = new Tmds.DBus.Connection(Address.System);
+                await dBusSystem.ConnectAsync();
 
                 // Find all D-Bus objects and their interfaces
                 var objectManager = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.IObjectManager>(bluezService, Tmds.DBus.ObjectPath.Root);
@@ -80,11 +82,14 @@ namespace RazManagerIO.Host.Services.CarreraDigital
                 };
 
                 var advertisement = new BluezAdvertisement(new ObjectPath("/org/bluez/example/advertisement0"), advertisementProperties);
+                var x = advertisement as IDBusObject;
+                await dBusSystem.RegisterObjectAsync(x);
 
                 //var o = new ObjectPath("/org/bluez/hci0/dev_E1_85_5E_ED_00_00");
-                //dBusSystem.RegisterObjectAsync(o);
 
                 await advertisingManagerProxy.RegisterAdvertisementAsync(advertisement.ObjectPath, new Dictionary<string, object>());
+
+                await Task.Delay(Timeout.Infinite);
             }
 
             catch (Tmds.DBus.DBusException exception)

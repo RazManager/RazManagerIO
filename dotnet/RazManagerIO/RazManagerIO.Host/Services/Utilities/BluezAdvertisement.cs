@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using System;
 using Tmds.DBus;
+using Microsoft.AspNetCore.Mvc.Formatters;
 
 
 namespace RazManagerIO.Host.Services.Utilities
@@ -10,7 +11,7 @@ namespace RazManagerIO.Host.Services.Utilities
     interface ILEAdvertisement1 : IDBusObject
     {
         Task ReleaseAsync();
-        Task<T> GetAsync<T>(string prop);
+        Task<object> GetAsync(string prop);
         Task<LEAdvertisement1Properties> GetAllAsync();
         Task SetAsync(string prop, object val);
         Task<IDisposable> WatchPropertiesAsync(Action<PropertyChanges> handler);
@@ -119,7 +120,7 @@ namespace RazManagerIO.Host.Services.Utilities
 
         public ObjectPath ObjectPath { get; }
 
-        public Task<T> GetAsync<T>(string prop)
+        public Task<object> GetAsync(string prop)
         {
             throw new NotImplementedException();
         }
@@ -132,7 +133,8 @@ namespace RazManagerIO.Host.Services.Utilities
 
         public Task<IDisposable> WatchPropertiesAsync(Action<PropertyChanges> handler)
         {
-            throw new NotImplementedException();
+
+            return Tmds.DBus.SignalWatcher.AddAsync(this, nameof(OnPropertyChanges), handler);
         }
 
         Task<LEAdvertisement1Properties> ILEAdvertisement1.GetAllAsync()
@@ -147,5 +149,9 @@ namespace RazManagerIO.Host.Services.Utilities
             //throw new NotImplementedException();
             return Task.CompletedTask;
         }
+
+        public event Action<PropertyChanges> OnPropertyChanges;
+
+
     }
 }
