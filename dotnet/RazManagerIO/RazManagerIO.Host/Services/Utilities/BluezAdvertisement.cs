@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using System;
 using Tmds.DBus;
-using Microsoft.AspNetCore.Mvc.Formatters;
 
 
 namespace RazManagerIO.Host.Services.Utilities
@@ -107,40 +106,10 @@ namespace RazManagerIO.Host.Services.Utilities
 
 
 
-    public class BluezAdvertisement : ILEAdvertisement1
+    public class BluezAdvertisement : BluezDBusObjectPropertiesBase<LEAdvertisement1Properties>, ILEAdvertisement1
     {
-        private readonly LEAdvertisement1Properties _properties;
-
-        public BluezAdvertisement(ObjectPath objectPath, LEAdvertisement1Properties properties)
+        public BluezAdvertisement(ObjectPath objectPath, LEAdvertisement1Properties properties) : base(objectPath, properties)
         {
-            ObjectPath = objectPath;
-            _properties = properties;
-        }
-
-
-        public ObjectPath ObjectPath { get; }
-
-        public Task<object> GetAsync(string prop)
-        {
-            throw new NotImplementedException();
-        }
-
-
-        public Task SetAsync(string prop, object val)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IDisposable> WatchPropertiesAsync(Action<PropertyChanges> handler)
-        {
-
-            return Tmds.DBus.SignalWatcher.AddAsync(this, nameof(OnPropertyChanges), handler);
-        }
-
-        Task<LEAdvertisement1Properties> ILEAdvertisement1.GetAllAsync()
-        {
-            //throw new NotImplementedException();
-            return Task.FromResult(_properties);
         }
 
 
