@@ -83,11 +83,19 @@ namespace RazManagerIO.Host.Services.CarreraDigital
                     };
 
                     var advertisement = new BluezAdvertisement(new ObjectPath("/org/bluez/example/advertisement1"), advertisementProperties);
-                    await dBusSystemConnection.RegisterObjectAsync(advertisement);
-                    //var x = advertisement as IDBusObject;
-                    //await dBusSystem.RegisterObjectAsync(x);
 
-                    await advertisingManagerProxy.RegisterAdvertisementAsync(((IDBusObject)advertisement).ObjectPath, new Dictionary<string, object>());
+                    var g = await advertisement.GetAllAsync();
+                    var x = advertisement as IDBusObject;
+                    if (x is null)
+                    {
+                        throw new Exception("advertisement is not an IDBusObject");
+                    }
+                    //await dBusSystemConnection.RegisterObjectAsync(x);
+                    await dBusSystemConnection.RegisterObjectAsync(advertisement);
+
+
+                    //await advertisingManagerProxy.RegisterAdvertisementAsync(((IDBusObject)advertisement).ObjectPath, new Dictionary<string, object>());
+                    await advertisingManagerProxy.RegisterAdvertisementAsync(advertisement.ObjectPath, new Dictionary<string, object>());
 
                     Console.WriteLine("Advertising...");
 
