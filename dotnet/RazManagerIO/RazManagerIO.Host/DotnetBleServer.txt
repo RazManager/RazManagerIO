@@ -1,0 +1,303 @@
+     string "org.freedesktop.nm_priv_helper"
+      string "org.debian.apt"
+      string "io.netplan.Netplan"
+      string "org.bluez"
+      string "org.freedesktop.hostname1"
+      string "net.reactivated.Fprint"
+      string "org.freedesktop.PackageKit"
+      string "org.freedesktop.UPower"
+      string "org.freedesktop.UDisks2"
+      string "org.freedesktop.network1"
+      string "org.freedesktop.oom1"
+      string "net.hadess.PowerProfiles"
+      string "com.canonical.UbuntuAdvantage"
+      string "org.freedesktop.bolt"
+      string "org.freedesktop.resolve1"
+      string "org.freedesktop.timedate1"
+      string "org.freedesktop.RealtimeKit1"
+      string "fi.w1.wpa_supplicant1"
+      string "org.freedesktop.Accounts"
+      string "com.ubuntu.WhoopsiePreferences"
+      string "org.freedesktop.nm_dispatcher"
+      string "org.freedesktop.locale1"
+      string "org.opensuse.CupsPkHelper.Mechanism"
+   ]
+method call time=1698079595.236340 sender=:1.105 -> destination=org.freedesktop.DBus serial=1 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=Hello
+method return time=1698079595.236358 sender=org.freedesktop.DBus -> destination=:1.105 serial=1 reply_serial=1
+   string ":1.105"
+signal time=1698079595.236363 sender=org.freedesktop.DBus -> destination=(null destination) serial=128 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=NameOwnerChanged
+   string ":1.105"
+   string ""
+   string ":1.105"
+signal time=1698079595.236370 sender=org.freedesktop.DBus -> destination=:1.105 serial=2 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=NameAcquired
+   string ":1.105"
+signal time=1698079595.294316 sender=:1.14 -> destination=(null destination) serial=995 path=/org/freedesktop/NetworkManager/AccessPoint/1; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged
+   string "org.freedesktop.NetworkManager.AccessPoint"
+   array [
+      dict entry(
+         string "Strength"
+         variant             byte 81
+      )
+   ]
+   array [
+   ]
+method call time=1698079595.405991 sender=:1.105 -> destination=org.bluez serial=2 path=/org/bluez/hci0; interface=org.bluez.LEAdvertisingManager1; member=RegisterAdvertisement
+   object path "/org/bluez/example/advertisement0"
+   array [
+   ]
+method call time=1698079595.406165 sender=:1.5 -> destination=org.freedesktop.DBus serial=240 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=AddMatch
+   string "type='signal',sender='org.freedesktop.DBus',path='/org/freedesktop/DBus',interface='org.freedesktop.DBus',member='NameOwnerChanged',arg0=':1.105'"
+method return time=1698079595.406173 sender=org.freedesktop.DBus -> destination=:1.5 serial=32 reply_serial=240
+method call time=1698079595.406235 sender=:1.5 -> destination=org.freedesktop.DBus serial=241 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=GetNameOwner
+   string ":1.105"
+method return time=1698079595.406239 sender=org.freedesktop.DBus -> destination=:1.5 serial=33 reply_serial=241
+   string ":1.105"
+method call time=1698079595.406266 sender=:1.5 -> destination=org.freedesktop.DBus serial=242 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=AddMatch
+   string "type='signal',sender=':1.105',path='/org/bluez/example/advertisement0',interface='org.freedesktop.DBus.ObjectManager',member='InterfacesAdded'"
+method return time=1698079595.406272 sender=org.freedesktop.DBus -> destination=:1.5 serial=34 reply_serial=242
+method call time=1698079595.406319 sender=:1.5 -> destination=org.freedesktop.DBus serial=243 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=AddMatch
+   string "type='signal',sender=':1.105',path='/org/bluez/example/advertisement0',interface='org.freedesktop.DBus.ObjectManager',member='InterfacesRemoved'"
+method return time=1698079595.406325 sender=org.freedesktop.DBus -> destination=:1.5 serial=35 reply_serial=243
+method call time=1698079595.406370 sender=:1.5 -> destination=org.freedesktop.DBus serial=244 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=AddMatch
+   string "type='signal',sender=':1.105',path_namespace='/org/bluez/example/advertisement0'"
+method return time=1698079595.406374 sender=org.freedesktop.DBus -> destination=:1.5 serial=36 reply_serial=244
+method call time=1698079595.406401 sender=:1.5 -> destination=org.freedesktop.DBus serial=245 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=AddMatch
+   string "type='signal',sender=':1.105',path='/org/bluez/example/advertisement0',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',arg0='org.bluez.LEAdvertisement1'"
+method return time=1698079595.406408 sender=org.freedesktop.DBus -> destination=:1.5 serial=37 reply_serial=245
+method call time=1698079595.406592 sender=:1.5 -> destination=org.freedesktop.DBus serial=246 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=StartServiceByName
+   string ":1.105"
+   uint32 0
+error time=1698079595.406600 sender=org.freedesktop.DBus -> destination=:1.5 error_name=org.freedesktop.DBus.Error.ServiceUnknown reply_serial=246
+   string "The name :1.105 was not provided by any .service files"
+method call time=1698079595.406649 sender=:1.5 -> destination=:1.105 serial=247 path=/org/bluez/example/advertisement0; interface=org.freedesktop.DBus.ObjectManager; member=GetManagedObjects
+error time=1698079595.412258 sender=:1.105 -> destination=:1.5 error_name=org.freedesktop.DBus.Error.UnknownMethod reply_serial=247
+   string "Method "GetManagedObjects" with signature "" on interface "org.freedesktop.DBus.ObjectManager" doesn't exist"
+method call time=1698079595.412401 sender=:1.5 -> destination=:1.105 serial=248 path=/org/bluez/example/advertisement0; interface=org.freedesktop.DBus.Properties; member=GetAll
+   string "org.bluez.LEAdvertisement1"
+method return time=1698079595.415499 sender=:1.105 -> destination=:1.5 serial=4 reply_serial=248
+   array [
+      dict entry(
+         string "Type"
+         variant             string "peripheral"
+      )
+      dict entry(
+         string "ServiceUUIDs"
+         variant             array [
+               string "12345678-1234-5678-1234-56789abcdef0"
+            ]
+      )
+      dict entry(
+         string "IncludeTxPower"
+         variant             boolean false
+      )
+      dict entry(
+         string "LocalName"
+         variant             string "A"
+      )
+   ]
+method call time=1698079595.416455 sender=:1.5 -> destination=:1.105 serial=249 path=/org/bluez/example/advertisement0; interface=org.freedesktop.DBus.Properties; member=Set
+   string "org.bluez.LEAdvertisement1"
+   string "TxPower"
+   variant       int16 7
+method return time=1698079595.418126 sender=:1.105 -> destination=:1.5 serial=5 reply_serial=249
+signal time=1698079595.420609 sender=:1.5 -> destination=(null destination) serial=250 path=/org/bluez/hci0; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged
+   string "org.bluez.LEAdvertisingManager1"
+   array [
+      dict entry(
+         string "SupportedInstances"
+         variant             byte 7
+      )
+      dict entry(
+         string "ActiveInstances"
+         variant             byte 1
+      )
+   ]
+   array [
+   ]
+method return time=1698079595.420646 sender=:1.5 -> destination=:1.105 serial=251 reply_serial=2
+method call time=1698079596.240595 sender=:1.83 -> destination=org.freedesktop.DBus serial=100 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=ListNames
+method return time=1698079596.240610 sender=org.freedesktop.DBus -> destination=:1.83 serial=129 reply_serial=100
+   array [
+      string "org.freedesktop.DBus"
+      string ":1.7"
+      string "org.freedesktop.timesync1"
+      string ":1.8"
+      string ":1.9"
+      string "org.freedesktop.systemd1"
+      string "org.freedesktop.ModemManager1"
+      string "org.freedesktop.NetworkManager"
+      string "org.freedesktop.oom1"
+
+
+     string "org.freedesktop.nm_priv_helper"
+      string "org.debian.apt"
+      string "io.netplan.Netplan"
+      string "org.bluez"
+      string "org.freedesktop.hostname1"
+      string "net.reactivated.Fprint"
+      string "org.freedesktop.PackageKit"
+      string "org.freedesktop.UPower"
+      string "org.freedesktop.UDisks2"
+      string "org.freedesktop.network1"
+      string "org.freedesktop.oom1"
+      string "net.hadess.PowerProfiles"
+      string "com.canonical.UbuntuAdvantage"
+      string "org.freedesktop.bolt"
+      string "org.freedesktop.resolve1"
+      string "org.freedesktop.timedate1"
+      string "org.freedesktop.RealtimeKit1"
+      string "fi.w1.wpa_supplicant1"
+      string "org.freedesktop.Accounts"
+      string "com.ubuntu.WhoopsiePreferences"
+      string "org.freedesktop.nm_dispatcher"
+      string "org.freedesktop.locale1"
+      string "org.opensuse.CupsPkHelper.Mechanism"
+   ]
+method call time=1698079595.236340 sender=:1.105 -> destination=org.freedesktop.DBus serial=1 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=Hello
+method return time=1698079595.236358 sender=org.freedesktop.DBus -> destination=:1.105 serial=1 reply_serial=1
+   string ":1.105"
+signal time=1698079595.236363 sender=org.freedesktop.DBus -> destination=(null destination) serial=128 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=NameOwnerChanged
+   string ":1.105"
+   string ""
+   string ":1.105"
+signal time=1698079595.236370 sender=org.freedesktop.DBus -> destination=:1.105 serial=2 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=NameAcquired
+   string ":1.105"
+signal time=1698079595.294316 sender=:1.14 -> destination=(null destination) serial=995 path=/org/freedesktop/NetworkManager/AccessPoint/1; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged
+   string "org.freedesktop.NetworkManager.AccessPoint"
+   array [
+      dict entry(
+         string "Strength"
+         variant             byte 81
+      )
+   ]
+   array [
+   ]
+method call time=1698079595.405991 sender=:1.105 -> destination=org.bluez serial=2 path=/org/bluez/hci0; interface=org.bluez.LEAdvertisingManager1; member=RegisterAdvertisement
+   object path "/org/bluez/example/advertisement0"
+   array [
+   ]
+method call time=1698079595.406165 sender=:1.5 -> destination=org.freedesktop.DBus serial=240 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=AddMatch
+   string "type='signal',sender='org.freedesktop.DBus',path='/org/freedesktop/DBus',interface='org.freedesktop.DBus',member='NameOwnerChanged',arg0=':1.105'"
+method return time=1698079595.406173 sender=org.freedesktop.DBus -> destination=:1.5 serial=32 reply_serial=240
+method call time=1698079595.406235 sender=:1.5 -> destination=org.freedesktop.DBus serial=241 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=GetNameOwner
+   string ":1.105"
+method return time=1698079595.406239 sender=org.freedesktop.DBus -> destination=:1.5 serial=33 reply_serial=241
+   string ":1.105"
+method call time=1698079595.406266 sender=:1.5 -> destination=org.freedesktop.DBus serial=242 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=AddMatch
+   string "type='signal',sender=':1.105',path='/org/bluez/example/advertisement0',interface='org.freedesktop.DBus.ObjectManager',member='InterfacesAdded'"
+method return time=1698079595.406272 sender=org.freedesktop.DBus -> destination=:1.5 serial=34 reply_serial=242
+method call time=1698079595.406319 sender=:1.5 -> destination=org.freedesktop.DBus serial=243 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=AddMatch
+   string "type='signal',sender=':1.105',path='/org/bluez/example/advertisement0',interface='org.freedesktop.DBus.ObjectManager',member='InterfacesRemoved'"
+method return time=1698079595.406325 sender=org.freedesktop.DBus -> destination=:1.5 serial=35 reply_serial=243
+method call time=1698079595.406370 sender=:1.5 -> destination=org.freedesktop.DBus serial=244 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=AddMatch
+   string "type='signal',sender=':1.105',path_namespace='/org/bluez/example/advertisement0'"
+method return time=1698079595.406374 sender=org.freedesktop.DBus -> destination=:1.5 serial=36 reply_serial=244
+method call time=1698079595.406401 sender=:1.5 -> destination=org.freedesktop.DBus serial=245 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=AddMatch
+   string "type='signal',sender=':1.105',path='/org/bluez/example/advertisement0',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',arg0='org.bluez.LEAdvertisement1'"
+method return time=1698079595.406408 sender=org.freedesktop.DBus -> destination=:1.5 serial=37 reply_serial=245
+method call time=1698079595.406592 sender=:1.5 -> destination=org.freedesktop.DBus serial=246 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=StartServiceByName
+   string ":1.105"
+   uint32 0
+error time=1698079595.406600 sender=org.freedesktop.DBus -> destination=:1.5 error_name=org.freedesktop.DBus.Error.ServiceUnknown reply_serial=246
+   string "The name :1.105 was not provided by any .service files"
+method call time=1698079595.406649 sender=:1.5 -> destination=:1.105 serial=247 path=/org/bluez/example/advertisement0; interface=org.freedesktop.DBus.ObjectManager; member=GetManagedObjects
+error time=1698079595.412258 sender=:1.105 -> destination=:1.5 error_name=org.freedesktop.DBus.Error.UnknownMethod reply_serial=247
+   string "Method "GetManagedObjects" with signature "" on interface "org.freedesktop.DBus.ObjectManager" doesn't exist"
+method call time=1698079595.412401 sender=:1.5 -> destination=:1.105 serial=248 path=/org/bluez/example/advertisement0; interface=org.freedesktop.DBus.Properties; member=GetAll
+   string "org.bluez.LEAdvertisement1"
+method return time=1698079595.415499 sender=:1.105 -> destination=:1.5 serial=4 reply_serial=248
+   array [
+      dict entry(
+         string "Type"
+         variant             string "peripheral"
+      )
+      dict entry(
+         string "ServiceUUIDs"
+         variant             array [
+               string "12345678-1234-5678-1234-56789abcdef0"
+            ]
+      )
+      dict entry(
+         string "IncludeTxPower"
+         variant             boolean false
+      )
+      dict entry(
+         string "LocalName"
+         variant             string "A"
+      )
+   ]
+method call time=1698079595.416455 sender=:1.5 -> destination=:1.105 serial=249 path=/org/bluez/example/advertisement0; interface=org.freedesktop.DBus.Properties; member=Set
+   string "org.bluez.LEAdvertisement1"
+   string "TxPower"
+   variant       int16 7
+method return time=1698079595.418126 sender=:1.105 -> destination=:1.5 serial=5 reply_serial=249
+signal time=1698079595.420609 sender=:1.5 -> destination=(null destination) serial=250 path=/org/bluez/hci0; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged
+   string "org.bluez.LEAdvertisingManager1"
+   array [
+      dict entry(
+         string "SupportedInstances"
+         variant             byte 7
+      )
+      dict entry(
+         string "ActiveInstances"
+         variant             byte 1
+      )
+   ]
+   array [
+   ]
+method return time=1698079595.420646 sender=:1.5 -> destination=:1.105 serial=251 reply_serial=2
+method call time=1698079596.240595 sender=:1.83 -> destination=org.freedesktop.DBus serial=100 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=ListNames
+method return time=1698079596.240610 sender=org.freedesktop.DBus -> destination=:1.83 serial=129 reply_serial=100
+   array [
+      string "org.freedesktop.DBus"
+      string ":1.7"
+      string "org.freedesktop.timesync1"
+      string ":1.8"
+      string ":1.9"
+      string "org.freedesktop.systemd1"
+      string "org.freedesktop.ModemManager1"
+      string "org.freedesktop.NetworkManager"
+      string "org.freedesktop.oom1"
+
+
+
+
+
+
+
+
+
+
+
+ethod call time=1698080345.077125 sender=:1.5 -> destination=org.freedesktop.DBus serial=439 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=StartServiceByName
+   string ":1.141"
+   uint32 0
+error time=1698080345.077134 sender=org.freedesktop.DBus -> destination=:1.5 error_name=org.freedesktop.DBus.Error.ServiceUnknown reply_serial=439
+   string "The name :1.141 was not provided by any .service files"
+method call time=1698080345.077175 sender=:1.5 -> destination=:1.141 serial=440 path=/org/bluez/example/advertisement1; interface=org.freedesktop.DBus.ObjectManager; member=GetManagedObjects
+error time=1698080345.119416 sender=:1.141 -> destination=:1.5 error_name=org.freedesktop.DBus.Error.UnknownMethod reply_serial=440
+   string "Method "GetManagedObjects" with signature "" on interface "org.freedesktop.DBus.ObjectManager" doesn't exist"
+method call time=1698080345.119564 sender=:1.5 -> destination=:1.141 serial=441 path=/org/bluez/example/advertisement1; interface=org.freedesktop.DBus.Properties; member=GetAll
+   string "org.bluez.LEAdvertisement1"
+error time=1698080345.119792 sender=:1.141 -> destination=:1.5 error_name=org.freedesktop.DBus.Error.UnknownMethod reply_serial=441
+   string "Method "GetAll" with signature "s" on interface "org.freedesktop.DBus.Properties" doesn't exist"
+method call time=1698080345.121594 sender=:1.5 -> destination=:1.141 serial=442 path=/org/bluez/example/advertisement1; interface=org.freedesktop.DBus.Properties; member=Set
+   string "org.bluez.LEAdvertisement1"
+   string "TxPower"
+   variant       int16 7
+error time=1698080345.121716 sender=:1.141 -> destination=:1.5 error_name=org.freedesktop.DBus.Error.UnknownMethod reply_serial=442
+   string "Method "Set" with signature "ssv" on interface "org.freedesktop.DBus.Properties" doesn't exist"
+signal time=1698080345.122631 sender=:1.5 -> destination=(null destination) serial=443 path=/org/bluez/hci0; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged
+   string "org.bluez.LEAdvertisingManager1"
+   array [
+      dict entry(
+         string "SupportedInstances"
+         variant             byte 7
+      )
+      dict entry(
+         string "ActiveInstances"
+         variant             byte 1
+      )
+   ]
+   array [
+   ]
