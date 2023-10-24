@@ -46,19 +46,13 @@ namespace RazManagerIO.Host.Services.CarreraDigital
 
             try
             {
+                //var dBusSystem = Tmds.DBus.Connection.System;
                 using (var dBusSystemConnection = new Tmds.DBus.Connection(Address.System))
                 {
                     await dBusSystemConnection.ConnectAsync();
 
-                    var advertisementProperties = new AdvertisementProperties
-                    {
-                        Type = "peripheral",
-                        ServiceUUIDs = new[] { "12345678-1234-5678-1234-56789abcdef0" },
-                        LocalName = "F",
-                    };
-
                    // Find all D-Bus objects and their interfaces
-                   var objectManager = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.IObjectManager>(bluezService, Tmds.DBus.ObjectPath.Root);
+                   var objectManager = dBusSystemConnection.CreateProxy<bluez.DBus.IObjectManager>(bluezService, Tmds.DBus.ObjectPath.Root);
                    var dBusObjects = await objectManager.GetManagedObjectsAsync();
 
                    var dBusInterfaces = dBusObjects.SelectMany(dBusObject => dBusObject.Value, (ObjectPath, iface) => new { ObjectPath.Key, iface });
@@ -71,7 +65,7 @@ namespace RazManagerIO.Host.Services.CarreraDigital
                        return;
                    }
 
-                   var bluezAdapterProxy = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.IAdapter1>(bluezService, bluezAdapterInterfaceKp.Key);
+                   var bluezAdapterProxy = dBusSystemConnection.CreateProxy<bluez.DBus.IAdapter1>(bluezService, bluezAdapterInterfaceKp.Key);
                    await bluezAdapterProxy.SetPoweredAsync(true);
 
                    var advertisingManagerInterfaceKp = dBusInterfaces.FirstOrDefault(x => x.iface.Key == bluezLEAdvertisingManagerInterface);
@@ -82,20 +76,23 @@ namespace RazManagerIO.Host.Services.CarreraDigital
                        return;
                    }
 
-                    var advertisingManagerProxy = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.ILEAdvertisingManager1>(bluezService, advertisingManagerInterfaceKp.Key);
+                    var advertisingManagerProxy = dBusSystemConnection.CreateProxy<bluez.DBus.ILEAdvertisingManager1>(bluezService, advertisingManagerInterfaceKp.Key);
+                    //var advertisingManager = dBusSystemConnection.CreateProxy<bluez.DBus.ILEAdvertisingManager1>(bluezService, advertisingManagerInterfaceKp.Key);
+                    //var advertisingManager = dBusSystemConnection.CreateProxy<DotnetBleServer.Core.ILEAdvertisingManager1>("org.bluez", "/org/bluez/hci0");
 
-
-                    var advertisingManager = dBusSystemConnection.CreateProxy<DotnetBleServer.Core.ILEAdvertisingManager1>("org.bluez", "/org/bluez/hci0");
+                    var advertisementProperties = new AdvertisementProperties
+                    {
+                        Type = "peripheral",
+                        ServiceUUIDs = new[] { "12345678-1234-5678-1234-56789abcdef0" },
+                        LocalName = "G",
+                    };
 
                     var advertisement = new Advertisement("/org/bluez/example/advertisement0", advertisementProperties);
 
                     await dBusSystemConnection.RegisterObjectAsync(advertisement);
-                    Console.WriteLine($"advertisement object {advertisement.ObjectPath} created");
 
-                    await advertisingManager.RegisterAdvertisementAsync(((IDBusObject) advertisement).ObjectPath,
+                    await advertisingManagerProxy.RegisterAdvertisementAsync(((IDBusObject) advertisement).ObjectPath,
                         new Dictionary<string, object>());
-
-                    Console.WriteLine($"advertisement {advertisement.ObjectPath} registered in BlueZ advertising manager");
 
                     //await SampleGattApplication.RegisterGattApplication(serverContext);
 
