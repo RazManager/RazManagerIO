@@ -46,23 +46,50 @@ namespace RazManagerIO.Host.Services.CarreraDigital
 
             try
             {
-                using (var serverContext = new ServerContext())
+                using (var dBusSystemConnection = new Tmds.DBus.Connection(Address.System))
                 {
-                    await serverContext.Connect();
+                    await dBusSystemConnection.ConnectAsync();
 
                     var advertisementProperties = new AdvertisementProperties
                     {
                         Type = "peripheral",
                         ServiceUUIDs = new[] { "12345678-1234-5678-1234-56789abcdef0" },
-                        LocalName = "D",
+                        LocalName = "F",
                     };
 
+                   // Find all D-Bus objects and their interfaces
+                   var objectManager = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.IObjectManager>(bluezService, Tmds.DBus.ObjectPath.Root);
+                   var dBusObjects = await objectManager.GetManagedObjectsAsync();
 
-                    var advertisingManager = serverContext.Connection.CreateProxy<DotnetBleServer.Core.ILEAdvertisingManager1>("org.bluez", "/org/bluez/hci0");
+                   var dBusInterfaces = dBusObjects.SelectMany(dBusObject => dBusObject.Value, (ObjectPath, iface) => new { ObjectPath.Key, iface });
+
+                   var bluezAdapterInterfaceKp = dBusInterfaces.FirstOrDefault(x => x.iface.Key == bluezAdapterInterface);
+                   if (bluezAdapterInterfaceKp is null)
+                   {
+                       _logger.LogCritical($"{bluezAdapterInterface} does not exist. Please install BlueZ (and an adapter for the needed Bluetooth Low Energy functionality), and then re-start this application.");
+                       //await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Disabled);
+                       return;
+                   }
+
+                   var bluezAdapterProxy = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.IAdapter1>(bluezService, bluezAdapterInterfaceKp.Key);
+                   await bluezAdapterProxy.SetPoweredAsync(true);
+
+                   var advertisingManagerInterfaceKp = dBusInterfaces.FirstOrDefault(x => x.iface.Key == bluezLEAdvertisingManagerInterface);
+                   if (advertisingManagerInterfaceKp is null)
+                   {
+                       _logger.LogCritical($"{bluezLEAdvertisingManagerInterface} does not exist. Please install BlueZ (and an adapter for the needed Bluetooth Low Energy functionality), and then re-start this application.");
+                       //await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Disabled);
+                       return;
+                   }
+
+                    var advertisingManagerProxy = Tmds.DBus.Connection.System.CreateProxy<bluez.DBus.ILEAdvertisingManager1>(bluezService, advertisingManagerInterfaceKp.Key);
+
+
+                    var advertisingManager = dBusSystemConnection.CreateProxy<DotnetBleServer.Core.ILEAdvertisingManager1>("org.bluez", "/org/bluez/hci0");
 
                     var advertisement = new Advertisement("/org/bluez/example/advertisement0", advertisementProperties);
 
-                    await serverContext.Connection.RegisterObjectAsync(advertisement);
+                    await dBusSystemConnection.RegisterObjectAsync(advertisement);
                     Console.WriteLine($"advertisement object {advertisement.ObjectPath} created");
 
                     await advertisingManager.RegisterAdvertisementAsync(((IDBusObject) advertisement).ObjectPath,
