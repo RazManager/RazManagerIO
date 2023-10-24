@@ -54,12 +54,21 @@ namespace RazManagerIO.Host.Services.CarreraDigital
                     {
                         Type = "peripheral",
                         ServiceUUIDs = new[] { "12345678-1234-5678-1234-56789abcdef0" },
-                        LocalName = "B",
+                        LocalName = "D",
                     };
 
-                    await new AdvertisingManager(serverContext).CreateAdvertisement(advertisementProperties);
 
+                    var advertisingManager = serverContext.Connection.CreateProxy<DotnetBleServer.Core.ILEAdvertisingManager1>("org.bluez", "/org/bluez/hci0");
 
+                    var advertisement = new Advertisement("/org/bluez/example/advertisement0", advertisementProperties);
+
+                    await serverContext.Connection.RegisterObjectAsync(advertisement);
+                    Console.WriteLine($"advertisement object {advertisement.ObjectPath} created");
+
+                    await advertisingManager.RegisterAdvertisementAsync(((IDBusObject) advertisement).ObjectPath,
+                        new Dictionary<string, object>());
+
+                    Console.WriteLine($"advertisement {advertisement.ObjectPath} registered in BlueZ advertising manager");
 
                     //await SampleGattApplication.RegisterGattApplication(serverContext);
 
