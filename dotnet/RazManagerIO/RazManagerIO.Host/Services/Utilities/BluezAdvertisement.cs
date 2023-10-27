@@ -102,6 +102,20 @@ namespace RazManagerIO.Host.Services.Utilities
                 _LocalName = (value);
             }
         }
+
+        private bool _Discoverable = default(bool);
+        public bool Discoverable
+        {
+            get
+            {
+                return _Discoverable;
+            }
+
+            set
+            {
+                _Discoverable = (value);
+            }
+        }
     }
 
 
@@ -115,7 +129,6 @@ namespace RazManagerIO.Host.Services.Utilities
 
         public Task ReleaseAsync()
         {
-            //throw new NotImplementedException();
             return Task.CompletedTask;
         }
 
