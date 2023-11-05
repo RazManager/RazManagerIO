@@ -7,6 +7,8 @@ using System.Linq;
 using bluez.DBus;
 using Tmds.DBus;
 using System.Collections.Generic;
+using System.Text;
+using System.Reflection.PortableExecutable;
 
 
 namespace RazManagerIO.Host.Services.CarreraDigital
@@ -48,32 +50,39 @@ namespace RazManagerIO.Host.Services.CarreraDigital
                 {
                     await dBusSystemConnection.ConnectAsync();
 
-                   // Find all D-Bus objects and their interfaces
-                   var objectManager = dBusSystemConnection.CreateProxy<bluez.DBus.IObjectManager>(bluezService, Tmds.DBus.ObjectPath.Root);
-                   var dBusObjects = await objectManager.GetManagedObjectsAsync();
+                    // Find all D-Bus objects and their interfaces
+                    var objectManager = dBusSystemConnection.CreateProxy<bluez.DBus.IObjectManager>(bluezService, Tmds.DBus.ObjectPath.Root);
+                    var dBusObjects = await objectManager.GetManagedObjectsAsync();
 
-                   var dBusInterfaces = dBusObjects.SelectMany(dBusObject => dBusObject.Value, (ObjectPath, iface) => new { ObjectPath.Key, iface });
+                    var dBusInterfaces = dBusObjects.SelectMany(dBusObject => dBusObject.Value, (ObjectPath, iface) => new { ObjectPath.Key, iface });
 
-                   var bluezAdapterInterfaceKp = dBusInterfaces.FirstOrDefault(x => x.iface.Key == bluezAdapterInterface);
-                   if (bluezAdapterInterfaceKp is null)
-                   {
-                       _logger.LogCritical($"{bluezAdapterInterface} does not exist. Please install BlueZ (and an adapter for the needed Bluetooth Low Energy functionality), and then re-start this application.");
-                       //await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Disabled);
-                       return;
-                   }
+                    var bluezAdapterInterfaceKp = dBusInterfaces.FirstOrDefault(x => x.iface.Key == bluezAdapterInterface);
+                    if (bluezAdapterInterfaceKp is null)
+                    {
+                        _logger.LogCritical($"{bluezAdapterInterface} does not exist. Please install BlueZ (and an adapter for the needed Bluetooth Low Energy functionality), and then re-start this application.");
+                        //await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Disabled);
+                        return;
+                    }
+                    var bluezAdapterProxy = dBusSystemConnection.CreateProxy<bluez.DBus.IAdapter1>(bluezService, bluezAdapterInterfaceKp.Key);
+                    await bluezAdapterProxy.SetPoweredAsync(true);
 
-                   var bluezAdapterProxy = dBusSystemConnection.CreateProxy<bluez.DBus.IAdapter1>(bluezService, bluezAdapterInterfaceKp.Key);
-                   await bluezAdapterProxy.SetPoweredAsync(true);
+                    var bluezAdvertisingManagerInterfaceKp = dBusInterfaces.FirstOrDefault(x => x.iface.Key == bluezLEAdvertisingManagerInterface);
+                    if (bluezAdvertisingManagerInterfaceKp is null)
+                    {
+                        _logger.LogCritical($"{bluezLEAdvertisingManagerInterface} does not exist. Please install BlueZ (and an adapter for the needed Bluetooth Low Energy functionality), and then re-start this application.");
+                        //await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Disabled);
+                        return;
+                    }
+                    var bluezAdvertisingManagerProxy = dBusSystemConnection.CreateProxy<bluez.DBus.ILEAdvertisingManager1>(bluezService, bluezAdvertisingManagerInterfaceKp.Key);
 
-                   var advertisingManagerInterfaceKp = dBusInterfaces.FirstOrDefault(x => x.iface.Key == bluezLEAdvertisingManagerInterface);
-                   if (advertisingManagerInterfaceKp is null)
-                   {
-                       _logger.LogCritical($"{bluezLEAdvertisingManagerInterface} does not exist. Please install BlueZ (and an adapter for the needed Bluetooth Low Energy functionality), and then re-start this application.");
-                       //await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Disabled);
-                       return;
-                   }
-
-                    var advertisingManagerProxy = dBusSystemConnection.CreateProxy<bluez.DBus.ILEAdvertisingManager1>(bluezService, advertisingManagerInterfaceKp.Key);
+                    var bluezGattManagerInterfaceKp = dBusInterfaces.FirstOrDefault(x => x.iface.Key == bluezGattManagerInterface);
+                    if (bluezGattManagerInterfaceKp is null)
+                    {
+                        _logger.LogCritical($"{bluezGattManagerInterface} does not exist. Please install BlueZ (and an adapter for the needed Bluetooth Low Energy functionality), and then re-start this application.");
+                        //await _bluetoothConnectionStateChangedAsync(BluezClientBluetoothConnectionStateType.Disabled);
+                        return;
+                    }
+                    var bluezGattManagerProxy = dBusSystemConnection.CreateProxy<bluez.DBus.IGattManager1>(bluezService, bluezGattManagerInterfaceKp.Key);
 
                     if (watchInterfacesAddedTask is not null)
                     {
@@ -104,9 +113,9 @@ namespace RazManagerIO.Host.Services.CarreraDigital
                         Console.WriteLine(@"bluezAdapterProxy.WatchPropertiesAsync {propertyChanges}");
                     });
 
-                    await advertisingManagerProxy.WatchPropertiesAsync(propertyChanges => 
+                    await bluezAdvertisingManagerProxy.WatchPropertiesAsync(propertyChanges => 
                     {
-                        Console.WriteLine(@"advertisingManagerProxy.WatchPropertiesAsync {propertyChanges}");
+                        Console.WriteLine(@"bluezAdvertisingManagerProxy.WatchPropertiesAsync {propertyChanges}");
                     });
 
                     _logger.LogInformation($"BlueZ initialization done.");
@@ -122,12 +131,73 @@ namespace RazManagerIO.Host.Services.CarreraDigital
 
                     var advertisement = new BluezAdvertisement(new ObjectPath("/org/bluez/example/advertisement1"), advertisementProperties);
                     await dBusSystemConnection.RegisterObjectAsync(advertisement);
-
-                    await advertisingManagerProxy.RegisterAdvertisementAsync(advertisement.ObjectPath, new Dictionary<string, object>());
-
-                    //await SampleGattApplication.RegisterGattApplication(serverContext);
+                    await bluezAdvertisingManagerProxy.RegisterAdvertisementAsync(advertisement.ObjectPath, new Dictionary<string, object>());
 
                     Console.WriteLine("Advertising.");
+
+                    var gattServiceDescription = new BluezGattServiceDescription
+                    {
+                        UUID = "12345678-1234-5678-1234-56789abcdef0",
+                        Primary = true
+                    };
+
+                    var gattCharacteristicDescription = new BluezGattCharacteristicDescription
+                    {
+                        CharacteristicSource = new ExampleCharacteristicSource(),
+                        UUID = "12345678-1234-5678-1234-56789abcdef1",
+                        Flags = CharacteristicFlags.Read | CharacteristicFlags.Write | CharacteristicFlags.WritableAuxiliaries
+                    };
+
+                    var gattDescriptorDescription = new BluezGattDescriptorDescription
+                    {
+                        Value = new[] { (byte)'t' },
+                        UUID = "12345678-1234-5678-1234-56789abcdef2",
+                        Flags = new[] { "read", "write" }
+                    };
+
+                    gattCharacteristicDescription.AddDescriptor(gattDescriptorDescription);
+                    gattServiceDescription.AddCharacteristic(gattCharacteristicDescription);
+
+                    var appId = Guid.NewGuid().ToString().Substring(0, 8);
+                    var applicationObjectPath = $"/{appId}";
+
+                    var application = new BluezGattApplication(applicationObjectPath);
+                    await dBusSystemConnection.RegisterObjectAsync(application);
+
+                    var gattService1Properties = new GattService1Properties
+                    {
+                        UUID = gattServiceDescription.UUID,
+                        Primary = gattServiceDescription.Primary,
+                        //Characteristics = new ObjectPath[0]
+                    };
+                    var gattService = application.AddService(gattService1Properties);
+                    await dBusSystemConnection.RegisterObjectAsync(gattService);
+
+                    foreach (var characteristicDescription in gattServiceDescription.GattCharacteristicDescriptions)
+                    {
+                        var gattCharacteristic1Properties = new GattCharacteristic1Properties
+                        {
+                            UUID = characteristicDescription.UUID,
+                            Flags = CharacteristicFlagConverter.ConvertFlags(characteristicDescription.Flags)
+                        };
+                        var gattCharacteristic = gattService.AddCharacteristic(gattCharacteristic1Properties, characteristicDescription.CharacteristicSource);
+                        await dBusSystemConnection.RegisterObjectAsync(gattCharacteristic);
+
+                        foreach (var descriptorDescription in characteristicDescription.Descriptors)
+                        {
+                            var gattDescriptor1Properties = new GattDescriptor1Properties
+                            {
+                                UUID = descriptorDescription.UUID,
+                                //Flags = descriptorDescription.Flags,
+                                Value = descriptorDescription.Value
+                            };
+
+                            var gattDescriptor = gattCharacteristic.AddDescriptor(gattDescriptor1Properties);
+                            await dBusSystemConnection.RegisterObjectAsync(gattDescriptor);
+                        }
+                    }
+
+                    await bluezGattManagerProxy.RegisterApplicationAsync(new ObjectPath(applicationObjectPath), new Dictionary<string, object>());
 
                     await Task.Delay(Timeout.Infinite);
                 }
@@ -161,6 +231,22 @@ namespace RazManagerIO.Host.Services.CarreraDigital
         private void InterfaceRemoved((Tmds.DBus.ObjectPath objectPath, string[] interfaces) args)
         {
             Console.WriteLine($"{args.objectPath} removed.");
+        }
+    }
+
+
+    internal class ExampleCharacteristicSource : ICharacteristicSource
+    {
+        public Task WriteValueAsync(byte[] value)
+        {
+            Console.WriteLine("Writing value");
+            return Task.Run(() => Console.WriteLine(Encoding.ASCII.GetChars(value)));
+        }
+
+        public Task<byte[]> ReadValueAsync()
+        {
+            Console.WriteLine("Reading value");
+            return Task.FromResult(Encoding.ASCII.GetBytes("Hello BLE"));
         }
     }
 }

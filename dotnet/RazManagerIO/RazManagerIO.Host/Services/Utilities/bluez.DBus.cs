@@ -739,7 +739,7 @@ namespace bluez.DBus
     }
 
     [Dictionary]
-    class GattService1Properties
+    public class GattService1Properties
     {
         private string _UUID = default(string);
         public string UUID
@@ -961,7 +961,7 @@ namespace bluez.DBus
     }
 
     [Dictionary]
-    class GattDescriptor1Properties
+    public class GattDescriptor1Properties
     {
         private string _UUID = default(string);
         public string UUID
